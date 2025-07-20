@@ -37,6 +37,12 @@ export interface TrelloAction {
 export interface TrelloBoard {
   id: string;
   name: string;
+  personalizedName: string;
+  owner?: {
+    id: string;
+    fullName?: string;
+    username: string;
+  };
   description: string;
   url: string;
   lastActivity: string;

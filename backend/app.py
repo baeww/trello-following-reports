@@ -27,7 +27,7 @@ class TrelloAPI:
         """Get basic board information"""
         url = f"{self.base_url}/boards/{board_id}"
         params = {
-            'fields': 'name,desc,url,dateLastActivity'
+            'fields': 'name,desc,url,dateLastActivity,idMembers'
         }
         # Add auth params only if credentials are provided
         if self.api_key and self.api_token:
@@ -36,6 +36,20 @@ class TrelloAPI:
         
         response = requests.get(url, params=params)
         return response.json() if response.status_code == 200 else None
+
+    def get_board_members(self, board_id):
+        """Get board members information"""
+        url = f"{self.base_url}/boards/{board_id}/members"
+        params = {
+            'fields': 'fullName,username'
+        }
+        # Add auth params only if credentials are provided
+        if self.api_key and self.api_token:
+            params['key'] = self.api_key
+            params['token'] = self.api_token
+        
+        response = requests.get(url, params=params)
+        return response.json() if response.status_code == 200 else []
     
     def get_board_cards(self, board_id):
         """Get all cards from a board"""
@@ -110,6 +124,7 @@ def get_boards_data():
                 cards = trello_api.get_board_cards(board_id)
                 lists = trello_api.get_board_lists(board_id)
                 actions = trello_api.get_board_actions(board_id)
+                members = trello_api.get_board_members(board_id)
                 
                 # Create list name mapping
                 list_names = {lst['id']: lst['name'] for lst in lists}
@@ -118,9 +133,23 @@ def get_boards_data():
                 for card in cards:
                     card['listName'] = list_names.get(card.get('idList'), 'Unknown')
                 
+                # Create personalized board name
+                original_name = board_info['name']
+                personalized_name = original_name
+                
+                if members:
+                    # Get the first member (usually the owner)
+                    owner = members[0]
+                    owner_name = owner.get('fullName') or owner.get('username', 'Unknown')
+                    
+                    # Create personalized name: "Board Name (Owner's Name)"
+                    personalized_name = f"{original_name} ({owner_name})"
+                
                 board_data = {
                     'id': board_id,
-                    'name': board_info['name'],
+                    'name': original_name,
+                    'personalizedName': personalized_name,
+                    'owner': members[0] if members else None,
                     'description': board_info.get('desc', ''),
                     'url': board_info['url'],
                     'lastActivity': board_info.get('dateLastActivity'),
@@ -154,6 +183,7 @@ def get_single_board(board_id):
         cards = trello_api.get_board_cards(board_id)
         lists = trello_api.get_board_lists(board_id)
         actions = trello_api.get_board_actions(board_id)
+        members = trello_api.get_board_members(board_id)
         
         # Create list name mapping
         list_names = {lst['id']: lst['name'] for lst in lists}
@@ -162,9 +192,23 @@ def get_single_board(board_id):
         for card in cards:
             card['listName'] = list_names.get(card.get('idList'), 'Unknown')
         
+        # Create personalized board name
+        original_name = board_info['name']
+        personalized_name = original_name
+        
+        if members:
+            # Get the first member (usually the owner)
+            owner = members[0]
+            owner_name = owner.get('fullName') or owner.get('username', 'Unknown')
+            
+            # Create personalized name: "Board Name (Owner's Name)"
+            personalized_name = f"{original_name} ({owner_name})"
+        
         board_data = {
             'id': board_id,
-            'name': board_info['name'],
+            'name': original_name,
+            'personalizedName': personalized_name,
+            'owner': members[0] if members else None,
             'description': board_info.get('desc', ''),
             'url': board_info['url'],
             'lastActivity': board_info.get('dateLastActivity'),

@@ -36,7 +36,7 @@ export function ActivityFilter() {
               );
               return (
                 <option key={board.id} value={board.id}>
-                  {board.name} ({boardActivities.length})
+                  {board.personalizedName} ({boardActivities.length})
                 </option>
               );
             })}

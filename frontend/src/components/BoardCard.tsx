@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Calendar, List, Activity } from 'lucide-react';
+import { ExternalLink, Calendar, List, Activity, BarChart3 } from 'lucide-react';
 import { TrelloBoard } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -20,7 +20,10 @@ export function BoardCard({ board }: BoardCardProps) {
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-800 mb-1">{board.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-1">{board.personalizedName}</h3>
+          {board.name !== board.personalizedName && (
+            <p className="text-xs text-gray-500 mb-1">Original: {board.name}</p>
+          )}
           {board.description && (
             <p className="text-sm text-gray-600 mb-2 line-clamp-2">{board.description}</p>
           )}
@@ -65,6 +68,37 @@ export function BoardCard({ board }: BoardCardProps) {
           <span>Last activity: {formatDate(board.lastActivity)}</span>
         </div>
       </div>
+
+      {board.lists.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+            <BarChart3 className="w-4 h-4 mr-1 text-trello-blue" />
+            List Breakdown:
+          </h4>
+          <div className="space-y-2">
+            {board.lists.map((list) => {
+              const cardsInList = board.cards.filter(card => card.idList === list.id);
+              const percentage = board.cards.length > 0 ? Math.round((cardsInList.length / board.cards.length) * 100) : 0;
+              return (
+                <div key={list.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 truncate flex-1">{list.name}</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-trello-blue h-2 rounded-full" 
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded min-w-[60px] text-center">
+                      {cardsInList.length}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {board.cards.length > 0 && (
         <div className="mt-4">
