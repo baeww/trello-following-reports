@@ -9,6 +9,12 @@ export function ActivityFilter() {
     dispatch({ type: 'SET_ACTIVITY_FILTER', payload: event.target.value });
   };
 
+  // Calculate total pages for current filter
+  const filteredActivities = state.activityFilter === 'all' 
+    ? state.activities 
+    : state.activities.filter(activity => activity.boardId === state.activityFilter);
+  const totalPages = Math.ceil(filteredActivities.length / state.activitiesPerPage);
+
   if (state.boards.length === 0) {
     return null;
   }
@@ -22,26 +28,33 @@ export function ActivityFilter() {
             Filter Activities:
           </label>
         </div>
-        <div className="relative">
-          <select
-            id="activity-filter"
-            value={state.activityFilter}
-            onChange={handleFilterChange}
-            className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-trello-blue focus:border-transparent"
-          >
-            <option value="all">All Boards ({state.activities.length})</option>
-            {state.boards.map((board) => {
-              const boardActivities = state.activities.filter(
-                activity => activity.boardId === board.id
-              );
-              return (
-                <option key={board.id} value={board.id}>
-                  {board.personalizedName} ({boardActivities.length})
-                </option>
-              );
-            })}
-          </select>
-          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <div className="flex items-center space-x-4">
+          {totalPages > 1 && (
+            <div className="text-xs text-gray-500">
+              Page {state.activityPage} of {totalPages}
+            </div>
+          )}
+          <div className="relative">
+            <select
+              id="activity-filter"
+              value={state.activityFilter}
+              onChange={handleFilterChange}
+              className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-trello-blue focus:border-transparent"
+            >
+              <option value="all">All Boards ({state.activities.length})</option>
+              {state.boards.map((board) => {
+                const boardActivities = state.activities.filter(
+                  activity => activity.boardId === board.id
+                );
+                return (
+                  <option key={board.id} value={board.id}>
+                    {board.personalizedName} ({boardActivities.length})
+                  </option>
+                );
+              })}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
         </div>
       </div>
     </div>

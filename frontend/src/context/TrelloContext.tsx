@@ -8,6 +8,8 @@ interface TrelloState {
   error: string | null;
   selectedBoardIds: string[];
   activityFilter: string; // 'all' or board ID
+  activityPage: number;
+  activitiesPerPage: number;
 }
 
 type TrelloActionType = 
@@ -19,7 +21,10 @@ type TrelloActionType =
   | { type: 'ADD_BOARD'; payload: string }
   | { type: 'REMOVE_BOARD'; payload: string }
   | { type: 'CLEAR_ALL_BOARDS' }
-  | { type: 'SET_ACTIVITY_FILTER'; payload: string };
+  | { type: 'SET_ACTIVITY_FILTER'; payload: string }
+  | { type: 'SET_ACTIVITY_PAGE'; payload: number }
+  | { type: 'NEXT_ACTIVITY_PAGE' }
+  | { type: 'PREV_ACTIVITY_PAGE' };
 
 // Load saved board IDs from localStorage
 const loadSavedBoardIds = (): string[] => {
@@ -50,6 +55,8 @@ const initialState: TrelloState = {
   error: null,
   selectedBoardIds: loadSavedBoardIds(),
   activityFilter: loadSavedActivityFilter(),
+  activityPage: 1,
+  activitiesPerPage: 50,
 };
 
 // Save board IDs to localStorage
@@ -114,9 +121,28 @@ function trelloReducer(state: TrelloState, action: TrelloActionType): TrelloStat
     case 'SET_ACTIVITY_FILTER':
       newState = { 
         ...state, 
-        activityFilter: action.payload 
+        activityFilter: action.payload,
+        activityPage: 1 // Reset to first page when filter changes
       };
       saveActivityFilter(action.payload);
+      break;
+    case 'SET_ACTIVITY_PAGE':
+      newState = { 
+        ...state, 
+        activityPage: action.payload 
+      };
+      break;
+    case 'NEXT_ACTIVITY_PAGE':
+      newState = { 
+        ...state, 
+        activityPage: state.activityPage + 1 
+      };
+      break;
+    case 'PREV_ACTIVITY_PAGE':
+      newState = { 
+        ...state, 
+        activityPage: Math.max(1, state.activityPage - 1) 
+      };
       break;
     default:
       return state;

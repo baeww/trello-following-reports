@@ -3,6 +3,7 @@ import { Clock, User, MessageSquare, CheckSquare, Plus } from 'lucide-react';
 import { TrelloAction } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { useTrello } from '../context/TrelloContext';
+import { ActivityPagination } from './ActivityPagination';
 
 interface ActivityTimelineProps {
   activities: TrelloAction[];
@@ -15,6 +16,11 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
   const filteredActivities = state.activityFilter === 'all' 
     ? activities 
     : activities.filter(activity => activity.boardId === state.activityFilter);
+
+  // Apply pagination
+  const startIndex = (state.activityPage - 1) * state.activitiesPerPage;
+  const endIndex = startIndex + state.activitiesPerPage;
+  const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
   const getActionIcon = (type: string) => {
     switch (type) {
       case 'commentCard':
@@ -75,7 +81,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Activity Timeline</h2>
       <div className="space-y-4">
-        {filteredActivities.map((activity) => (
+        {paginatedActivities.map((activity) => (
           <div key={activity.id} className="flex items-start space-x-3">
             <div className="flex-shrink-0 mt-1">
               {getActionIcon(activity.type)}
@@ -105,6 +111,11 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
             </div>
           </div>
         ))}
+        <ActivityPagination 
+          totalActivities={filteredActivities.length}
+          currentPage={state.activityPage}
+          activitiesPerPage={state.activitiesPerPage}
+        />
       </div>
     </div>
   );
