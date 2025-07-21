@@ -18,8 +18,11 @@ export const trelloApi = {
   },
 
   // Get data for multiple boards
-  getBoardsData: async (boardIds: string[]): Promise<BoardsResponse> => {
-    const response = await api.post('/boards', { board_ids: boardIds });
+  getBoardsData: async (boardIds: string[], forceRefresh: boolean = false): Promise<BoardsResponse> => {
+    const response = await api.post('/boards', { 
+      board_ids: boardIds,
+      force_refresh: forceRefresh
+    });
     return response.data;
   },
 
@@ -36,6 +39,19 @@ export const trelloApi = {
       payload.since = since;
     }
     const response = await api.post('/boards/activity', payload);
+    return response.data;
+  },
+
+  // Clear cache
+  clearCache: async (boardId?: string) => {
+    const payload = boardId ? { board_id: boardId } : {};
+    const response = await api.post('/cache/clear', payload);
+    return response.data;
+  },
+
+  // Get cache information
+  getCacheInfo: async () => {
+    const response = await api.get('/cache/info');
     return response.data;
   },
 }; 

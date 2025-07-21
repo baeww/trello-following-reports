@@ -1,24 +1,34 @@
 import React, { useEffect } from 'react';
 import { TrelloProvider, useTrello } from './context/TrelloContext';
 import { BoardSelector } from './components/BoardSelector';
+import { BoardSearch } from './components/BoardSearch';
 import { BoardCard } from './components/BoardCard';
 import { ActivityFilter } from './components/ActivityFilter';
 import { ActivityTimeline } from './components/ActivityTimeline';
+import { CacheStatus } from './components/CacheStatus';
 import { trelloApi } from './services/api';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 function Dashboard() {
   const { state, dispatch } = useTrello();
+  const [cacheInfo, setCacheInfo] = React.useState<any>(null);
+  const [fromCache, setFromCache] = React.useState<boolean>(false);
 
-  const fetchBoardsData = async () => {
+  const fetchBoardsData = async (forceRefresh: boolean = false) => {
     if (state.selectedBoardIds.length === 0) return;
     
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
     
     try {
-      const response = await trelloApi.getBoardsData(state.selectedBoardIds);
+      const response = await trelloApi.getBoardsData(state.selectedBoardIds, forceRefresh);
       dispatch({ type: 'SET_BOARDS', payload: response.boards });
+      
+      // Update cache information
+      if (response.cache_info) {
+        setCacheInfo(response.cache_info);
+        setFromCache(response.from_cache || false);
+      }
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch boards data' });
     } finally {
@@ -38,13 +48,17 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchBoardsData();
+    fetchBoardsData(false); // Don't force refresh on initial load
     fetchActivities();
   }, [state.selectedBoardIds]);
 
   const handleRefresh = () => {
-    fetchBoardsData();
+    fetchBoardsData(true); // Force refresh when refresh button is clicked
     fetchActivities();
+  };
+
+  const toggleBoardSummaries = () => {
+    dispatch({ type: 'TOGGLE_BOARD_SUMMARIES' });
   };
 
   return (
@@ -53,18 +67,57 @@ function Dashboard() {
         <header className="mb-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Trello Dashboard</h1>
-            <button
-              onClick={handleRefresh}
-              disabled={state.loading}
-              className="flex items-center px-4 py-2 bg-trello-blue text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${state.loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            <div className="flex items-center space-x-2">
+              {state.boards.length > 0 && (
+                <button
+                  onClick={toggleBoardSummaries}
+                  className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  title={state.showBoardSummaries ? "Hide Board Summaries" : "Show Board Summaries"}
+                >
+                  {state.showBoardSummaries ? (
+                    <EyeOff className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Eye className="w-4 h-4 mr-2" />
+                  )}
+                  {state.showBoardSummaries ? "Hide Boards" : "Show Boards"}
+                </button>
+              )}
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_ACTIVITY_TIMELINE' })}
+                className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                title={state.showActivityTimeline ? "Hide Activity Timeline" : "Show Activity Timeline"}
+              >
+                {state.showActivityTimeline ? (
+                  <EyeOff className="w-4 h-4 mr-2" />
+                ) : (
+                  <Eye className="w-4 h-4 mr-2" />
+                )}
+                {state.showActivityTimeline ? "Hide Timeline" : "Show Timeline"}
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={state.loading}
+                className="flex items-center px-4 py-2 bg-trello-blue text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${state.loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
           </div>
         </header>
 
         <BoardSelector />
+
+        <BoardSearch />
+
+        <CacheStatus 
+          cacheInfo={cacheInfo} 
+          fromCache={fromCache}
+          onCacheCleared={() => {
+            setCacheInfo(null);
+            setFromCache(false);
+          }}
+        />
 
         {state.error && (
           <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
@@ -82,15 +135,21 @@ function Dashboard() {
           </div>
         )}
 
-        {!state.loading && state.boards.length > 0 && (
+        {!state.loading && state.boards.length > 0 && state.showBoardSummaries && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-            {state.boards.map((board) => (
-              <BoardCard key={board.id} board={board} />
-            ))}
+            {state.boards
+              .filter(board => 
+                !state.boardSearchTerm || 
+                board.personalizedName.toLowerCase().includes(state.boardSearchTerm.toLowerCase()) ||
+                board.name.toLowerCase().includes(state.boardSearchTerm.toLowerCase())
+              )
+              .map((board) => (
+                <BoardCard key={board.id} board={board} />
+              ))}
           </div>
         )}
 
-        {!state.loading && state.boards.length > 0 && (
+        {!state.loading && state.boards.length > 0 && state.showActivityTimeline && (
           <>
             <ActivityFilter />
             <ActivityTimeline activities={state.activities} />

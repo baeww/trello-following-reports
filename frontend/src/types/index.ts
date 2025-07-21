@@ -59,6 +59,14 @@ export interface TrelloBoard {
 export interface BoardsResponse {
   boards: TrelloBoard[];
   timestamp: string;
+  cache_info?: {
+    [key: string]: {
+      age_seconds: number;
+      expires_in_seconds: number;
+      is_expired: boolean;
+    };
+  };
+  from_cache?: boolean;
 }
 
 export interface ActivityResponse {

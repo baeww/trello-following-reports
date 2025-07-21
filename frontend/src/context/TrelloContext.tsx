@@ -10,6 +10,9 @@ interface TrelloState {
   activityFilter: string; // 'all' or board ID
   activityPage: number;
   activitiesPerPage: number;
+  showBoardSummaries: boolean;
+  boardSearchTerm: string;
+  showActivityTimeline: boolean;
 }
 
 type TrelloActionType = 
@@ -24,7 +27,10 @@ type TrelloActionType =
   | { type: 'SET_ACTIVITY_FILTER'; payload: string }
   | { type: 'SET_ACTIVITY_PAGE'; payload: number }
   | { type: 'NEXT_ACTIVITY_PAGE' }
-  | { type: 'PREV_ACTIVITY_PAGE' };
+  | { type: 'PREV_ACTIVITY_PAGE' }
+  | { type: 'TOGGLE_BOARD_SUMMARIES' }
+  | { type: 'SET_BOARD_SEARCH_TERM'; payload: string }
+  | { type: 'TOGGLE_ACTIVITY_TIMELINE' };
 
 // Load saved board IDs from localStorage
 const loadSavedBoardIds = (): string[] => {
@@ -57,6 +63,9 @@ const initialState: TrelloState = {
   activityFilter: loadSavedActivityFilter(),
   activityPage: 1,
   activitiesPerPage: 50,
+  showBoardSummaries: true, // Default to true
+  boardSearchTerm: '',
+  showActivityTimeline: true, // Default to true
 };
 
 // Save board IDs to localStorage
@@ -142,6 +151,24 @@ function trelloReducer(state: TrelloState, action: TrelloActionType): TrelloStat
       newState = { 
         ...state, 
         activityPage: Math.max(1, state.activityPage - 1) 
+      };
+      break;
+    case 'TOGGLE_BOARD_SUMMARIES':
+      newState = { 
+        ...state, 
+        showBoardSummaries: !state.showBoardSummaries 
+      };
+      break;
+    case 'SET_BOARD_SEARCH_TERM':
+      newState = {
+        ...state,
+        boardSearchTerm: action.payload
+      };
+      break;
+    case 'TOGGLE_ACTIVITY_TIMELINE':
+      newState = {
+        ...state,
+        showActivityTimeline: !state.showActivityTimeline
       };
       break;
     default:

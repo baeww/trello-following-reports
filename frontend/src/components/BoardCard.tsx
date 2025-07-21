@@ -9,6 +9,7 @@ interface BoardCardProps {
 
 export function BoardCard({ board }: BoardCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [expandedListId, setExpandedListId] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     try {
@@ -20,6 +21,10 @@ export function BoardCard({ board }: BoardCardProps) {
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const toggleListExpanded = (listId: string) => {
+    setExpandedListId(expandedListId === listId ? null : listId);
   };
 
   return (
@@ -96,20 +101,54 @@ export function BoardCard({ board }: BoardCardProps) {
                 {board.lists.map((list) => {
                   const cardsInList = board.cards.filter(card => card.idList === list.id);
                   const percentage = board.cards.length > 0 ? Math.round((cardsInList.length / board.cards.length) * 100) : 0;
+                  const isListExpanded = expandedListId === list.id;
+                  
                   return (
-                    <div key={list.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 truncate flex-1">{list.name}</span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-trello-blue h-2 rounded-full" 
-                            style={{ width: `${percentage}%` }}
-                          ></div>
+                    <div key={list.id} className="border border-gray-200 rounded-md">
+                      <button
+                        onClick={() => toggleListExpanded(list.id)}
+                        className="w-full flex items-center justify-between text-sm p-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-gray-600 truncate flex-1 text-left">{list.name}</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-trello-blue h-2 rounded-full" 
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded min-w-[60px] text-center">
+                            {cardsInList.length}
+                          </span>
+                          {cardsInList.length > 0 && (
+                            <ChevronDown 
+                              className={`w-4 h-4 text-gray-400 transition-transform ${
+                                isListExpanded ? 'rotate-180' : ''
+                              }`} 
+                            />
+                          )}
                         </div>
-                        <span className="text-xs font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded min-w-[60px] text-center">
-                          {cardsInList.length}
-                        </span>
-                      </div>
+                      </button>
+                      
+                      {isListExpanded && cardsInList.length > 0 && (
+                        <div className="border-t border-gray-200 bg-gray-50 p-3">
+                          <div className="space-y-2">
+                            {cardsInList.map((card) => (
+                              <div key={card.id} className="flex items-center justify-between text-sm bg-white p-2 rounded border">
+                                <span className="text-gray-700 truncate flex-1">{card.name}</span>
+                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                  {card.due && (
+                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                      Due: {formatDate(card.due)}
+                                    </span>
+                                  )}
+                                  <span>Updated: {formatDate(card.dateLastActivity)}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
